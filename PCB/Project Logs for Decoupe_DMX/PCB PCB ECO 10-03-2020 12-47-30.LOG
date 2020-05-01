@@ -1,0 +1,10 @@
+Removed Member From Class: ClassName=Mechanical Member=VIS_4
+Added Component: Designator=C41(C0603)
+Added Component: Designator=C42(C0603)
+Added Pin To Net: NetName=GND Pin=C41-1
+Added Pin To Net: NetName=IN1 Pin=C41-2
+Added Pin To Net: NetName=GND Pin=C42-1
+Added Pin To Net: NetName=IN2 Pin=C42-2
+Added Member To Class: ClassName=Outputs Member=Component C41 100nF
+Added Member To Class: ClassName=Outputs Member=Component C42 100nF
+Added Member To Class: ClassName=Outputs Member=Component U13 CI4093

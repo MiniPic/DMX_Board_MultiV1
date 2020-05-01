@@ -1,0 +1,10 @@
+Removed Pin From Net: NetName=RX_DEBUG_P Pin=J14-1
+Removed Pin From Net: NetName=GND_P Pin=J14-4
+Removed Pin From Net: NetName=NRST_P Pin=J14-5
+Removed Pin From Net: NetName=SWCLK_P Pin=J14-6
+Removed Pin From Net: NetName=SWDIO_P Pin=J14-7
+Added Pin To Net: NetName=NRST_P Pin=J14-1
+Added Pin To Net: NetName=SWDIO_P Pin=J14-3
+Added Pin To Net: NetName=RX_DEBUG_P Pin=J14-4
+Added Pin To Net: NetName=SWCLK_P Pin=J14-5
+Added Pin To Net: NetName=GND_P Pin=J14-7

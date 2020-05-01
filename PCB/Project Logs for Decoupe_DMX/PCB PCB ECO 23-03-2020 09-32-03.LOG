@@ -1,0 +1,23 @@
+Removed Pin From Net: NetName=+3.3V Pin=J1-1
+Removed Pin From Net: NetName=SWDIO Pin=J1-2
+Removed Pin From Net: NetName=SWCLK Pin=J1-3
+Removed Pin From Net: NetName=NRST Pin=J1-4
+Removed Pin From Net: NetName=GND Pin=J1-5
+Removed Pin From Net: NetName=TX_DEBUG Pin=J1-6
+Removed Pin From Net: NetName=RX_DEBUG Pin=J1-7
+Removed Member From Class: ClassName=ProgTool Member=VIS_9
+Added Component: Designator=J1(CON_PROG)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Prix"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Added Pin To Net: NetName=+3.3V Pin=J1-1
+Added Pin To Net: NetName=SWDIO Pin=J1-2
+Added Pin To Net: NetName=SWCLK Pin=J1-3
+Added Pin To Net: NetName=NRST Pin=J1-4
+Added Pin To Net: NetName=GND Pin=J1-5
+Added Pin To Net: NetName=TX_DEBUG Pin=J1-6
+Added Pin To Net: NetName=RX_DEBUG Pin=J1-7
+Added Room: Name=ProgTool

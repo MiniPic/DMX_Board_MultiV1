@@ -1,0 +1,38 @@
+Added Component: Designator=J1(CON_PROG)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Prix"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=J14(BARF-2X4)
+Add component. Clean all parameters for all variants
+Add component (AddParameter): Name = "Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Prix"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fabricant"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Ref_Fournisseur"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=VIS_4(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Component: Designator=VIS_7(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Component: Designator=VIS_8(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Component: Designator=VIS_9(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Pin To Net: NetName=+3.3V Pin=J1-1
+Added Pin To Net: NetName=SWDIO Pin=J1-2
+Added Pin To Net: NetName=SWCLK Pin=J1-3
+Added Pin To Net: NetName=NRST Pin=J1-4
+Added Pin To Net: NetName=GND Pin=J1-5
+Added Pin To Net: NetName=TX_DEBUG Pin=J1-6
+Added Pin To Net: NetName=RX_DEBUG Pin=J1-7
+Added Pin To Net: NetName=RX_DEBUG Pin=J14-1
+Added Pin To Net: NetName=TX_DEBUG Pin=J14-2
+Added Pin To Net: NetName=GND Pin=J14-4
+Added Pin To Net: NetName=NRST Pin=J14-5
+Added Pin To Net: NetName=SWCLK Pin=J14-6
+Added Pin To Net: NetName=SWDIO Pin=J14-7
+Added Pin To Net: NetName=+3.3V Pin=J14-8
+Added Class: Name=ProgTool
+Added Room: Name=ProgTool

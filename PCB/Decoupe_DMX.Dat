@@ -1,0 +1,53 @@
+﻿Field=#~Integer~#~50|Field=Comment~String~Comment~100|Field=Description~String~Description~100|Field=Designator~String~Designator~100|Field=Footprint~String~Footprint~100|Field=LibRef~String~LibRef~100|Field=Quantity~Integer~Quantity~100|ReportField=Currency~<none>|ReportField=ProductionQuantity~1|ReportField=ProjectFileName~Decoupe_DMX.PrjPcb|ReportField=ProjectFullPath~Z:\TECHNIQUE\Projets\Decoupe_Theatre\PCB\Decoupe_DMX.PrjPcb|ReportField=Title~Bill of Materials For Project [Decoupe_DMX.PrjPcb] (No PCB Document Selected)|ReportField=TotalQuantity~168|ReportField=ReportTime~15:20:21|ReportField=ReportDate~27/03/2020|ReportField=ReportDateTime~27/03/2020 15:20:21|ReportField=OutputName~Bill of Materials|ReportField=OutputType~BOM_PartType|ReportField=GeneratorName~BOM|ReportField=GeneratorDescription~Bill of Materials|ReportField=VariantName~None|ReportField=Address1~|ReportField=Address2~|ReportField=Address3~|ReportField=Address4~|ReportField=Application_BuildNumber~|ReportField=ApprovedBy~|ReportField=Author~|ReportField=CheckedBy~|ReportField=CompanyName~|ReportField=CurrentDate~27/03/2020|ReportField=CurrentTime~15:19:51|ReportField=Date~|ReportField=DocumentFullPathAndName~Z:\TECHNIQUE\Projets\Decoupe_Theatre\PCB\IHM.SchDoc|ReportField=DocumentName~IHM.SchDoc|ReportField=DocumentNumber~|ReportField=DrawnBy~|ReportField=Engineer~|ReportField=ImagePath~|ReportField=ModifiedDate~09/03/2020|ReportField=Organization~|ReportField=ProjectName~Decoupe_DMX.PrjPcb|ReportField=Revision~|ReportField=Rule~|ReportField=SheetNumber~|ReportField=SheetTotal~|ReportField=Time~|ReportField=Title~Carte Découpe DMX|ReportField=DataSourceFileName~Decoupe_DMX.PrjPcb|ReportField=DataSourceFullPath~Z:\TECHNIQUE\Projets\Decoupe_Theatre\PCB\Decoupe_DMX.PrjPcb
+1|100nF|Capacitor|C1, C4, C9, C11, C12, C14, C18, C19, C20, C21, C24, C25, C28, C29, C30, C31, C32, C33, C36, C37, C38, C39, C40, C41, C42, C43|C0603|Cap|26
+2|10uF-50V|Capacitor|C2, C5, C6, C7, C10, C13, C17, C22, C23, C26, C27, C34, C35|C1206|Cap|13
+3|10nF|Capacitor|C3, C8|C0603|Cap|2
+4|15pF|Capacitor|C15, C16|C0603|Cap|2
+5|MURA110T3|Diode|D1|DO-214AC|Diode|1
+6|T47V|TRANSIL CMS 47V unidirectionnelle|D2, D3, D4|DIO47A|T47V|3
+7|3,6v|Zener Diode|D8, D11, D12, D13|SOD123|D Zener|4
+8|D4004|DIODE CMS 1A 400V  boitier DO214AC|D9, D10|DIO4004A|D4004|2
+9|FUS 5X20|FUSIBLE VERRE 5 x 20|F1|FUSPO-A1|FUS 5X20|1
+10|RELA-1RT-G6|RELAIS 1RT 12V|G1, G2|RELG6D1A|RELA-1RT-G6|2
+11||Programming Connector|J1, J15|CON_PROG|CON-PROG|2
+12|CUM/F3|connecteur 3 points|J2, J6, J8|HDR1X3|CUM/F3|3
+13|CUM/F4|connecteur  4 points|J3, J4|CNT4S|CUM/F4|2
+14|CUM/F8|connecteur 8 points|J5|CNT8C3|CUM/F8|1
+15|CUM/F4|connecteur  4 points|J7|CNT4J|CUM/F4|1
+16|CUM/F2|connecteur  2 points|J9|CNT2H|CUM/F2|1
+17|CUM/F8|connecteur 8 points|J10, J11, J12|BARF-2X4|CUM/F8|3
+18|CUM/F4|connecteur  4 points|J13|CNT4F0|CUM/F4|1
+19||Connector 8 points|J14|BARF-2X4|CON-8|1
+20|SELF270|self 270uH|L1|SELF270|SELF270|1
+21|LED-R|LED  piquer ou CMS ou reverse rouge|L2|LED-R1A|LED-R|1
+22|LED-V|LED  piquer  ou  CMS verte|L3|LED-V1A|LED-V|1
+23|LOGO_NePasJeter|Logo Ne Pas Jeter (sérigraphie)|LOGO_1|LogoNePasJeter|LOGO_NePasJeter|1
+24|LOGO_Poubelle|Logo poubelle (sérigraphie)|LOGO_2|LogoPB|LOGO_Poubelle|1
+25|LOGO_CE|Logo CE (sérigraphie)|LOGO_3|LogoCE|LOGO_CE|1
+26||I2C OLED 0.96"|M1|I2C_OLED_0.96|I2C-OLED-0.96|1
+27|375k|Thin Metal Film Resistor|R1|R0603|Res|1
+28|267k|Thin Metal Film Resistor|R2|R0603|Res|1
+29|3,8k|Thin Metal Film Resistor|R3|R0603|Res|1
+30|2.0|Thin Metal Film Resistor|R4|R0603|Res|1
+31|1k|Thin Metal Film Resistor|R5, R22, R23, R26, R28, R32, R33, R36, R37, R39, R41, R53, R54|R0603|Res|13
+32|10K|Thin Metal Film Resistor|R6, R10, R11, R12, R13, R45, R46, R49, R50|R0603|Res|9
+33|100K|Thin Metal Film Resistor|R7, R8, R24, R25, R27, R29, R34, R35, R38, R40, R42, R43, R44, R47, R48, R51|R0603|Res|16
+34|1M|Thin Metal Film Resistor|R9, R30, R31|R0603|Res|3
+35|100R|Thin Metal Film Resistor|R14, R15, R16, R17|R0603|Res|4
+36|R0.005U|Resistance 0.005U 1W 1% CMS BOITIER 2512|R18, R19, R20, R21|RCER005|R0.005U|4
+37|5K|Thin Metal Film Resistor|R52|R0603|Res|1
+38|SCHUNT|schunt 2 points|S2|SCHUNT|SCHUNT|1
+39|TOUCHE|Touche|S4, S5, S6|INT-O|TOUCHE|3
+40|IPT007N06N|TRANSISTOR MOS N|T1, T2, T3, T4|TRA007|IPT007N06N|4
+41|BSR202N|TRANSISTOR MOS N|T5, T6, T7|TRA202|BSR202N|3
+42|LM5008MM|High Voltage (100V) Step Down Switching Regulator, 8-pin MSOP|U1|MUA08A_M|LM5008MM|1
+43|STM32F103C8T6|ARM Cortex-M3 32-bit MCU, 64 KB Flash, 20 KB Internal RAM, 37 I/Os, 48-pin LQFP, -40 to 85 degC, Tray|U2|TQFP-48|STM32F103C8T6|1
+44|TLV1117|LDO regulator 3.3V|U3|SOT223|TLV1117|1
+45|78L05|E:cms ;C1:faible conso; VD:TO220 debout;|U4|REG5VE|78L05|1
+46|QUARTZ-8MHZ|QUARTZ 8 MHZ CMS|U5|QUA8G|QUARTZ-8MHZ|1
+47|CI485|DRIVER  RS485|U6|CIA485A|CI485|1
+48|MCP6031|SOT23|U7, U8, U9, U10|CIA6031|MCP6031|4
+49|RECOM7805|Régulateur à piquer recom|U11, U12|REG5VG|RECOM7805|2
+50|CI4093|Quad NAND gate|U13|CIL4093|CI4093|1
+51|V47V|VARISTANCE 47V BOITIER 1206|V1, V2|VAR47A|V47V|2
+52|VIS|VIS|VIS_1, VIS_2, VIS_3, VIS_4, VIS_5, VIS_6, VIS_7, VIS_8, VIS_9, VIS_10|HOLE3.5mm|VIS|10

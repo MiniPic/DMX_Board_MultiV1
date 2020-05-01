@@ -1,0 +1,8 @@
+Added Component: Designator=VIS_9(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Component: Designator=VIS_10(HOLE3.5mm)
+Add component. Clean all parameters for all variants
+Added Member To Class: ClassName=Mechanical Member=Component VIS_9 VIS
+Added Member To Class: ClassName=Mechanical Member=Component VIS_10 VIS
+Added Room: Name=Power_Supply
+Added Room: Name=ProgTool

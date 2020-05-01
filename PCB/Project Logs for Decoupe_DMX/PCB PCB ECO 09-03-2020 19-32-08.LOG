@@ -1,0 +1,4 @@
+Added Component: Designator=VIS_5(HOLE3.5mm)
+Added Component: Designator=VIS_6(HOLE3.5mm)
+Added Member To Class: ClassName=Mechanical Member=Component VIS_5 VIS
+Added Member To Class: ClassName=Mechanical Member=Component VIS_6 VIS

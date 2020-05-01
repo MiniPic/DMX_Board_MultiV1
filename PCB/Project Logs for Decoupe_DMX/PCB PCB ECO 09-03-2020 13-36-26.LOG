@@ -1,0 +1,10 @@
+Added Component: Designator=J5(CNT8C3)
+Added Pin To Net: NetName=+ALIM Pin=J5-1
+Added Pin To Net: NetName=LED1_GND Pin=J5-2
+Added Pin To Net: NetName=+ALIM Pin=J5-3
+Added Pin To Net: NetName=LED2_GND Pin=J5-4
+Added Pin To Net: NetName=+ALIM Pin=J5-5
+Added Pin To Net: NetName=LED3_GND Pin=J5-6
+Added Pin To Net: NetName=+ALIM Pin=J5-7
+Added Pin To Net: NetName=LED4_GND Pin=J5-8
+Added Member To Class: ClassName=Outputs Member=Component J5 CUM/F8

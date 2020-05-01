@@ -1,0 +1,52 @@
+Removed Pin From Net: NetName=PWM1 Pin=R14-2
+Removed Pin From Net: NetName=PWM2 Pin=R15-2
+Removed Pin From Net: NetName=PWM3 Pin=R16-2
+Removed Pin From Net: NetName=PWM4 Pin=R17-2
+Added Component: Designator=C36(C0603)
+Added Component: Designator=C37(C0603)
+Added Component: Designator=C38(C0603)
+Added Component: Designator=C39(C0603)
+Added Component: Designator=C40(C0603)
+Added Component: Designator=U13(CIL4093)
+Added Component: Designator=U14(CIL4093)
+Added Component: Designator=U15(CIL4093)
+Added Pin To Net: NetName=GND Pin=C36-1
+Added Pin To Net: NetName=+3.3V Pin=C36-2
+Added Pin To Net: NetName=GND Pin=C37-1
+Added Pin To Net: NetName=+3.3V Pin=C37-2
+Added Pin To Net: NetName=GND Pin=C38-1
+Added Pin To Net: NetName=+3.3V Pin=C38-2
+Added Pin To Net: NetName=GND Pin=C39-1
+Added Pin To Net: NetName=+3.3V Pin=C39-2
+Added Pin To Net: NetName=GND Pin=C40-1
+Added Pin To Net: NetName=+12V Pin=C40-2
+Added Pin To Net: NetName=PWM1 Pin=U13-1
+Added Pin To Net: NetName=PWM1 Pin=U13-2
+Added Pin To Net: NetName=PWM2 Pin=U13-5
+Added Pin To Net: NetName=PWM2 Pin=U13-6
+Added Pin To Net: NetName=GND Pin=U13-7
+Added Pin To Net: NetName=+12V Pin=U13-14
+Added Pin To Net: NetName=PWM3 Pin=U14-5
+Added Pin To Net: NetName=PWM3 Pin=U14-6
+Added Pin To Net: NetName=PWM4 Pin=U15-5
+Added Pin To Net: NetName=PWM4 Pin=U15-6
+Added Pin To Net: NetName=P1 Pin=R14-2
+Added Pin To Net: NetName=P1 Pin=U13-3
+Added Net: Name=P1
+Added Pin To Net: NetName=P2 Pin=R15-2
+Added Pin To Net: NetName=P2 Pin=U13-4
+Added Net: Name=P2
+Added Pin To Net: NetName=P3 Pin=R16-2
+Added Pin To Net: NetName=P3 Pin=U14-4
+Added Net: Name=P3
+Added Pin To Net: NetName=P4 Pin=R17-2
+Added Pin To Net: NetName=P4 Pin=U15-4
+Added Net: Name=P4
+Added Member To Class: ClassName=Outputs Member=Component C36 100nF
+Added Member To Class: ClassName=Outputs Member=Component C37 100nF
+Added Member To Class: ClassName=Outputs Member=Component C38 100nF
+Added Member To Class: ClassName=Outputs Member=Component C39 100nF
+Added Member To Class: ClassName=Outputs Member=Component C40 100nF
+Added Member To Class: ClassName=Outputs Member=Component U13 CI4093
+Added Member To Class: ClassName=Outputs Member=Component U14 CI4093
+Added Member To Class: ClassName=Outputs Member=Component U15 CI4093

@@ -1,0 +1,12 @@
+Removed Pin From Net: NetName=+3.3V Pin=C4-2
+Added Component: Designator=J3(CNT4S)
+Added Component: Designator=J4(CNT4S)
+Added Pin To Net: NetName=+5V Pin=C4-2
+Added Pin To Net: NetName=GND Pin=J3-1
+Added Pin To Net: NetName=DMX+ Pin=J3-2
+Added Pin To Net: NetName=DMX- Pin=J3-3
+Added Pin To Net: NetName=GND Pin=J4-1
+Added Pin To Net: NetName=DMX+ Pin=J4-2
+Added Pin To Net: NetName=DMX- Pin=J4-3
+Added Member To Class: ClassName=MCU Member=Component J3 CUM/F4
+Added Member To Class: ClassName=MCU Member=Component J4 CUM/F4
