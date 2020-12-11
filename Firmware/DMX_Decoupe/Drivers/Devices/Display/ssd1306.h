@@ -34,6 +34,9 @@ SCL        |PB6          |Serial clock line
 SDA        |PB7          |Serial data line
  */
 
+/* I2C Mode */
+#define GENERATED_I2C			//Comment if not I2C generated
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 
@@ -42,6 +45,9 @@ SDA        |PB7          |Serial data line
 #include "stdlib.h"
 #include "string.h"
 
+#ifdef GENERATED_I2C
+#include "../../../Middlewares/Protocol/GENE_I2C/GENE_I2C_Master.h"
+#endif
 
 
 /* Definitions ------------------------------------------------------------------*/
@@ -92,7 +98,11 @@ typedef enum {
  *           - 0: LCD was not detected on I2C port
  *           - > 0: LCD initialized OK and ready to use
  */
+#ifndef GENERATED_I2C
 uint8_t SSD1306_Init(I2C_HandleTypeDef* hi2c);
+#else
+uint8_t SSD1306_Init();
+#endif
 
 /** 
  * @brief  Updates buffer from internal RAM to LCD

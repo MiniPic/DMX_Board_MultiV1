@@ -10,12 +10,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "tim.h"
 #include "../Middlewares/Protocol/DMX/DMX.h"
 #include "../Drivers/Devices/Display/ssd1306.h"
 #include "../Drivers/System/Flash_Manager.h"
-#include "cmsis_os.h"
+#include "../Drivers/Devices/PWM/PWM.h"
+#include "../Middlewares/Protocol/GENE_I2C/GENE_I2C_Master.h"
 #include "App.h"
 #include "main.h"
+#include "stdio.h"
 
 /* Macros ---------------------------------------------------------------*/
 #define 	ParamExist()				(FlashManager_ReadInt32(PARAM_EXIST_ADDRESS)==PARAM_EXIST_CODE)
@@ -28,16 +31,20 @@
 #define		LED_PWM_PERIOD_VALUE		255
 #define		TIMOUT_DMX_SIGNAL			3000			//in ms
 
-#define		TASK_DELAY_LED				50
-#define		TASK_DELAY_IHM				50
-#define		REFRESH_DISPLAY				5				//5*TASK_DELAY_IHM
+#define		REFRESH_DISPLAY				100				//in ms
+#define		REFRESH_FAN					100				//in ms
 
-#define 	DELAY_SAVE_PARAM			5000			//in ms
+#define 	DELAY_SAVE_PARAM			3000		    //in ms
 
-#define		TIME_LONG_BP				500
+#define		TIME_LONG_BP				1000			//in ms
 
 #define		__TRUE						0x01
 #define 	__FALSE						0x00
+
+#define 	MIN_LED_PWM_VALUE			0
+#define 	MAX_LED_PWM_VALUE			255
+
+#define		OFFSET_SERVO				255
 
 /* Types Definitions ---------------------------------------------------------*/
 typedef enum {	MODE_OFF = 0x00,
@@ -45,30 +52,36 @@ typedef enum {	MODE_OFF = 0x00,
 				MODE_MANU = 0x02
 }App_Mode;
 
+typedef enum {	DISP_PARAM= 0x00,
+				DISP_CONFIG_MODE = 0x01,
+				DISP_CONFIG_INVERT = 0x02,
+				DISP_CONFIG_ADDRESS = 0x03,
+				DISP_CONFIG_MANVALUE = 0x04
+}Display_Mode_t;
+
+
 typedef enum {	BP_OFF,
 				BP_CLICK,
 				BP_1s,
 				BP_IDLE,
 }BP_Status;
 
-/* Public variables ----------------------------------------------------------*/
-
-
 /* Private variables ---------------------------------------------------------*/
-osThreadId 			AppLEDTaskHandle;
-osThreadId 			AppIHMTaskHandle;
-
-UART_HandleTypeDef* Ref_dmxuart;
-TIM_HandleTypeDef* 	LED_PWMtimer;
-uint32_t 			LED_PWMchannel;
-I2C_HandleTypeDef* 	I2C_display;
-
 uint16_t			DMX_Adress;
 
-uint8_t				DMX_value;
+uint8_t				Current_Value[4];
+uint8_t				Speed_value;
+uint8_t				Strob_value_Full;
+uint8_t				Strob_value_Rand;
 uint8_t				Manu_value;
 uint8_t				DMX_signal_OK;
 App_Mode			Current_Mode;
+uint8_t				IsInverted;
+volatile Display_Mode_t		Current_Display;
+uint8_t				Display_Cursor;
+uint8_t				Mean_Value;
+uint32_t 			tick_save_param;
+uint32_t 			param_changed = __FALSE;
 
 BP_Status 			Bp_Up;
 BP_Status 			Bp_Down;
@@ -82,7 +95,8 @@ uint8_t Load_Param()
 	if(ParamExist())
 	{
 		val_param = 	FlashManager_ReadInt32(PARAM_DMX_PARAM);
-		Current_Mode = 	(val_param&0xFF000000)>>24;
+		IsInverted = 	(val_param&0xF0000000)>>28;
+		Current_Mode = 	(val_param&0x0F000000)>>24;
 		Manu_value = 	(val_param&0x00FF0000)>>16;
 		DMX_Adress = 	(val_param&0x0000FFFF);
 		return __TRUE;
@@ -90,22 +104,84 @@ uint8_t Load_Param()
 	else
 	{
 		Current_Mode = MODE_OFF;
+		IsInverted = __FALSE;
 		Manu_value = 100;
 		DMX_Adress = 1;
 		return __FALSE;
 	}
 }
 
-uint8_t Write_Param()
+void Write_Param()
 {
 	uint32_t data[2];
 	data[0] = PARAM_EXIST_CODE;
 	data[1] = 0x00;
+	data[1] |= (IsInverted<<28);
 	data[1] |= (Current_Mode<<24);
 	data[1] |= (Manu_value<<16);
 	data[1] |= (DMX_Adress);
 
+	__disable_irq();
 	FlashManager_WriteMulti(PARAM_EXIST_ADDRESS,2,data);
+	__enable_irq();
+
+//	Display_Cursor=0;
+}
+
+uint8_t MeanArray(uint8_t array[], uint8_t size)
+{
+	uint32_t mean = 0;
+
+	for (uint8_t i=0; i<size; i++)
+	{
+		mean += array[i];
+	}
+
+	return mean/size;
+}
+
+void PWM_SetDutyAdapt(TIM_HandleTypeDef* timer, uint32_t channel, uint16_t power)
+{
+
+	uint32_t value_pulse;
+
+	//out power
+	if(power==0)
+		value_pulse = 0;
+	else
+	{
+		value_pulse = ((254*power)/(MAX_LED_PWM_VALUE-MIN_LED_PWM_VALUE))+MIN_LED_PWM_VALUE;
+		if(value_pulse > MAX_LED_PWM_VALUE)
+			value_pulse = MAX_LED_PWM_VALUE;
+	}
+
+	 __HAL_TIM_SET_COMPARE(timer, channel, value_pulse);
+}
+
+void PatchPWMtoLED (uint8_t isInverted)
+{
+	if(isInverted)
+	{
+		  LED1_pwmtimer = &htim2;
+		  LED1_PWMchannel = TIM_CHANNEL_4;
+		  LED2_pwmtimer = &htim2;
+		  LED2_PWMchannel = TIM_CHANNEL_3;
+		  LED3_pwmtimer = &htim2;
+		  LED3_PWMchannel = TIM_CHANNEL_2;
+		  LED4_pwmtimer = &htim2;
+		  LED4_PWMchannel = TIM_CHANNEL_1;
+	}
+	else
+	{
+		  LED1_pwmtimer = &htim2;
+		  LED1_PWMchannel = TIM_CHANNEL_1;
+		  LED2_pwmtimer = &htim2;
+		  LED2_PWMchannel = TIM_CHANNEL_2;
+		  LED3_pwmtimer = &htim2;
+		  LED3_PWMchannel = TIM_CHANNEL_3;
+		  LED4_pwmtimer = &htim2;
+		  LED4_PWMchannel = TIM_CHANNEL_4;
+	}
 }
 
 void Update_Display()
@@ -117,12 +193,79 @@ void Update_Display()
 
     SSD1306_Clear();
 
-    if(Current_Mode == MODE_OFF)			//OFF
+    if(Current_Display == DISP_PARAM)
+    {
+    	//CURSOR
+    	SSD1306_DrawFilledTriangle(0, 11*Display_Cursor, 0, 11*Display_Cursor + 8, 7, 11*Display_Cursor + 4, 1);
+
+    	//MODE
+    	SSD1306_GotoXY (10,0);
+    	SSD1306_Puts ("MODE: ", &Font_7x10, 1);
+    	SSD1306_GotoXY (80,0);
+    	if(Current_Mode == MODE_OFF)
+    		SSD1306_Puts ("OFF", &Font_7x10, 1);
+    	if(Current_Mode == MODE_MANU)
+    		SSD1306_Puts ("MANU", &Font_7x10, 1);
+    	if(Current_Mode == MODE_DMX)
+    	    SSD1306_Puts ("DMX", &Font_7x10, 1);
+
+    	//INVERT
+    	SSD1306_GotoXY (10,11);
+    	SSD1306_Puts ("INVERT: ", &Font_7x10, 1);
+    	SSD1306_GotoXY (80,11);
+		if(IsInverted)
+			SSD1306_Puts ("YES", &Font_7x10, 1);
+		else
+			SSD1306_Puts ("NO", &Font_7x10, 1);
+
+    	//ADRESS DMX
+    	SSD1306_GotoXY (10,22);
+    	SSD1306_Puts ("ADDRESS: ", &Font_7x10, 1);
+    	SSD1306_GotoXY (80,22);
+    	sprintf(Str_add,"%03d",DMX_Adress);
+    	SSD1306_Puts (Str_add, &Font_7x10, 1);
+
+    	//MAN VALUE
+    	SSD1306_GotoXY (10,33);
+    	SSD1306_Puts ("MAN VALUE: ", &Font_7x10, 1);
+    	SSD1306_GotoXY (80,33);
+		sprintf(Str_add,"%03d",Manu_value);
+		SSD1306_Puts (Str_add, &Font_7x10, 1);
+    }
+    else if(Current_Display == DISP_CONFIG_MODE)
     {
     	SSD1306_GotoXY (40,0);
-    	SSD1306_Puts ("OFF", &Font_16x26, 1);
+
+    	switch(Current_Mode)
+		{
+		case MODE_OFF:
+			SSD1306_Puts ("OFF", &Font_16x26, 1);
+			break;
+		case MODE_MANU:
+			SSD1306_Puts ("MANU", &Font_16x26, 1);
+			break;
+		case MODE_DMX:
+			SSD1306_Puts ("DMX", &Font_16x26, 1);
+			break;
+		default:
+			break;
+		}
     }
-    else if(Current_Mode == MODE_MANU)		//MANU
+    else if(Current_Display == DISP_CONFIG_INVERT)
+	{
+
+    	if(IsInverted)
+    	{
+    		SSD1306_GotoXY (40,0);
+    		SSD1306_Puts ("YES", &Font_16x26, 1);
+    	}
+    	else
+    	{
+    		SSD1306_GotoXY (48,0);
+    		SSD1306_Puts ("NO", &Font_16x26, 1);
+    	}
+	}
+    else if(Current_Display == DISP_CONFIG_MANVALUE)		//MANU
     {
     	percent_value = Manu_value;
     	sprintf(Str_percent,"%03d",percent_value);
@@ -133,16 +276,16 @@ void Update_Display()
     	SSD1306_GotoXY (0, 45);
     	SSD1306_Puts ("MODE:MANUAL", &Font_11x18, 1);
     }
-    else								//DMX
+    else if (Current_Display == DISP_CONFIG_ADDRESS)		//DMX
     {
-    	percent_value = (uint32_t)(DMX_value*100/255);
+    	percent_value = Mean_Value*100/255;
     	sprintf(Str_add,"%03d",DMX_Adress);
     	if(DMX_signal_OK)
 		{
 			SSD1306_GotoXY (0, 45);
 			SSD1306_Puts ("SIGNAL :OK", &Font_11x18, 1);
 			sprintf(Str_percent,"%03d",percent_value);
-			sprintf(Str_dmx,"%03d",DMX_value);
+			sprintf(Str_dmx,"%03d",Protocol_DMX_GetValue(1));
 		}
 		else
 		{
@@ -160,10 +303,17 @@ void Update_Display()
 		SSD1306_GotoXY (89, 27);
 		SSD1306_Puts (Str_add, &Font_11x18, 1);
 		SSD1306_GotoXY (105, 0);
-		SSD1306_Puts ("DMX", &Font_7x10, 1);
+		SSD1306_Puts ("CH1", &Font_7x10, 1);
 		SSD1306_GotoXY (105, 10);
 		SSD1306_Puts (Str_dmx, &Font_7x10, 1);
     }
+
+    if(param_changed==__TRUE)
+    {
+    	SSD1306_GotoXY (120,53);
+    	SSD1306_Puts ("M", &Font_7x10, 1);
+    }
+
 	SSD1306_UpdateScreen(); //display
 }
 
@@ -173,7 +323,8 @@ void Manage_Button()
 	static uint32_t time_BpDown=0;
 	static uint32_t time_BpOk=0;
 
-	if(!HAL_GPIO_ReadPin(T1_GPIO_Port, T1_Pin))
+	//UP
+	if(!HAL_GPIO_ReadPin(T3_GPIO_Port, T3_Pin))
 	{
 		if(Bp_Up==BP_OFF)
 		{
@@ -191,7 +342,8 @@ void Manage_Button()
 	else
 		Bp_Up=BP_OFF;
 
-	if(!HAL_GPIO_ReadPin(T3_GPIO_Port, T3_Pin))
+	//DOWN
+	if(!HAL_GPIO_ReadPin(T1_GPIO_Port, T1_Pin))
 	{
 		if(Bp_Down==BP_OFF)
 		{
@@ -209,6 +361,7 @@ void Manage_Button()
 	else
 		Bp_Down=BP_OFF;
 
+	//OK
 	if(!HAL_GPIO_ReadPin(T2_GPIO_Port, T2_Pin))
 	{
 		if(Bp_Ok==BP_OFF)
@@ -228,176 +381,462 @@ void Manage_Button()
 		Bp_Ok=BP_OFF;
 }
 
-void AppLEDTask(void const * argument)
+void AppLEDTask()
 {
-	for(;;)
-	{
-		osDelay(TASK_DELAY_LED);
+	uint8_t temp_strob_value =0;
+	uint8_t rand_value=0;
+	int32_t calcul;
 
-		if(Current_Mode == MODE_OFF)
-			PWM_SetDuty(LED_PWMtimer,LED_PWMchannel,0);
-		else if(Current_Mode == MODE_MANU)
-			PWM_SetDuty(LED_PWMtimer,LED_PWMchannel,(uint32_t)Manu_value*255/100);
+	static uint32_t cpt_strob=0;
+
+	//Mean value calculation
+	Mean_Value = MeanArray(Current_Value,4);
+
+	if(Current_Mode == MODE_OFF)
+	{
+		Current_Value[0]=0;
+		Current_Value[1]=0;
+		Current_Value[2]=0;
+		Current_Value[3]=0;
+
+		Speed_value=0;
+		Strob_value_Full=0;
+		Strob_value_Rand=0;
+
+		HAL_GPIO_WritePin(REL1_GPIO_Port, REL1_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(REL2_GPIO_Port, REL2_Pin, GPIO_PIN_RESET);
+	}
+	else if(Current_Mode == MODE_MANU)
+	{
+		Current_Value[0]=(uint32_t)(Manu_value*255/100);
+		Current_Value[1]=(uint32_t)(Manu_value*255/100);
+		Current_Value[2]=(uint32_t)(Manu_value*255/100);
+		Current_Value[3]=(uint32_t)(Manu_value*255/100);
+
+		Speed_value=0;
+		Strob_value_Full=0;
+		Strob_value_Rand=0;
+	}
+	else	//DMX MODE
+	{
+		if(HAL_GetTick()>Protocol_DMX_GetLastTickFrame()+TIMOUT_DMX_SIGNAL)
+		{
+			Current_Value[0]=0;
+			Current_Value[1]=0;
+			Current_Value[2]=0;
+			Current_Value[3]=0;
+
+			Speed_value=0;
+			Strob_value_Full=0;
+			Strob_value_Rand=0;
+
+			DMX_signal_OK = __FALSE;
+		}
 		else
 		{
-			DMX_value = Protocol_DMX_GetValue(1);									//CHANNEL 1
-			if(HAL_GetTick()>Protocol_DMX_GetLastTickFrame()+TIMOUT_DMX_SIGNAL)
+			Speed_value=Protocol_DMX_GetValue(6);
+			temp_strob_value=Protocol_DMX_GetValue(5);
+
+			//Speed update value
+			if(Speed_value==0)		//Instant
 			{
-				DMX_value=0;				//OFF LED if no signal
-				DMX_signal_OK = __FALSE;
+				Current_Value[0] = Protocol_DMX_GetValue(1);									//CHANNEL 1
+				Current_Value[1] = Protocol_DMX_GetValue(2);									//CHANNEL 2
+				Current_Value[2] = Protocol_DMX_GetValue(3);									//CHANNEL 3
+				Current_Value[3] = Protocol_DMX_GetValue(4);									//CHANNEL 4
 			}
 			else
 			{
-				DMX_signal_OK = __TRUE;
+				for (uint8_t i =0 ;i<4; i++)
+				{
+					if(Current_Value[i]<Protocol_DMX_GetValue(i+1))
+					{
+						calcul=Current_Value[i]+(260-Speed_value)/5;
+						if(calcul>Protocol_DMX_GetValue(i+1))
+							Current_Value[i]=Protocol_DMX_GetValue(i+1);
+						else
+							Current_Value[i]=calcul;
+					}
+					else if (Current_Value[i]>Protocol_DMX_GetValue(i+1))
+					{
+						calcul=Current_Value[i]-(260-Speed_value)/5;
+						if(calcul<Protocol_DMX_GetValue(i+1))
+							Current_Value[i]=Protocol_DMX_GetValue(i+1);
+						else
+							Current_Value[i]=calcul;
+					}
+				}
 			}
-			PWM_SetDuty(LED_PWMtimer,LED_PWMchannel,(uint32_t)DMX_value);
+
+			//Strob decomposition channel
+			if(temp_strob_value>127)
+			{
+				Strob_value_Full=0;
+				Strob_value_Rand=temp_strob_value-127;
+			}
+			else
+			{
+				Strob_value_Full=temp_strob_value;
+				Strob_value_Rand=0;
+			}
+			DMX_signal_OK = __TRUE;
 		}
+
+		if(Protocol_DMX_GetValue(7)<128)
+			HAL_GPIO_WritePin(REL1_GPIO_Port, REL1_Pin, GPIO_PIN_RESET);
+		else
+			HAL_GPIO_WritePin(REL1_GPIO_Port, REL1_Pin, GPIO_PIN_SET);
+
+		if(Protocol_DMX_GetValue(8)<128)
+			HAL_GPIO_WritePin(REL2_GPIO_Port, REL2_Pin, GPIO_PIN_RESET);
+		else
+			HAL_GPIO_WritePin(REL2_GPIO_Port, REL2_Pin, GPIO_PIN_SET);
+
+	}
+
+	//Set value on LED
+	if(temp_strob_value>0)	//STROB
+	{
+		if(Strob_value_Full>0 && cpt_strob>=(129-Strob_value_Full)/2)
+		{
+			PWM_SetDutyAdapt(LED1_pwmtimer,LED1_PWMchannel,(uint32_t)Current_Value[0]);
+			PWM_SetDutyAdapt(LED2_pwmtimer,LED2_PWMchannel,(uint32_t)Current_Value[1]);
+			PWM_SetDutyAdapt(LED3_pwmtimer,LED3_PWMchannel,(uint32_t)Current_Value[2]);
+			PWM_SetDutyAdapt(LED4_pwmtimer,LED4_PWMchannel,(uint32_t)Current_Value[3]);
+			cpt_strob=0;
+		}
+		else if(Strob_value_Rand>0 && cpt_strob>=(128-Strob_value_Rand)/2)
+		{
+			rand_value = HAL_GetTick()%4;
+			if(rand_value==0) PWM_SetDutyAdapt(LED1_pwmtimer,LED1_PWMchannel,(uint32_t)Current_Value[0]); else PWM_SetDutyAdapt(LED1_pwmtimer,LED1_PWMchannel,0);
+			if(rand_value==1) PWM_SetDutyAdapt(LED2_pwmtimer,LED2_PWMchannel,(uint32_t)Current_Value[1]); else PWM_SetDutyAdapt(LED2_pwmtimer,LED2_PWMchannel,0);
+			if(rand_value==2) PWM_SetDutyAdapt(LED3_pwmtimer,LED3_PWMchannel,(uint32_t)Current_Value[2]); else PWM_SetDutyAdapt(LED3_pwmtimer,LED3_PWMchannel,0);
+			if(rand_value==3) PWM_SetDutyAdapt(LED4_pwmtimer,LED4_PWMchannel,(uint32_t)Current_Value[3]); else PWM_SetDutyAdapt(LED4_pwmtimer,LED4_PWMchannel,0);
+
+			cpt_strob=0;
+		}
+		else
+		{
+			PWM_SetDutyAdapt(LED1_pwmtimer,LED1_PWMchannel,0);
+			PWM_SetDutyAdapt(LED2_pwmtimer,LED2_PWMchannel,0);
+			PWM_SetDutyAdapt(LED3_pwmtimer,LED3_PWMchannel,0);
+			PWM_SetDutyAdapt(LED4_pwmtimer,LED4_PWMchannel,0);
+
+			cpt_strob++;
+		}
+	}
+	else	//NON STROB
+	{
+		PWM_SetDutyAdapt(LED1_pwmtimer,LED1_PWMchannel,(uint32_t)Current_Value[0]);
+		PWM_SetDutyAdapt(LED2_pwmtimer,LED2_PWMchannel,(uint32_t)Current_Value[1]);
+		PWM_SetDutyAdapt(LED3_pwmtimer,LED3_PWMchannel,(uint32_t)Current_Value[2]);
+		PWM_SetDutyAdapt(LED4_pwmtimer,LED4_PWMchannel,(uint32_t)Current_Value[3]);
+
+		cpt_strob=0;
 	}
 }
 
-void AppIHMTask(void const * argument)
+void AppIHMTask()
 {
-	uint32_t cpt_refresh=0;
-	uint32_t tick_save_param;
-	uint32_t param_changed = __FALSE;
+	Manage_Button();
 
-	for(;;)
+	if(Current_Display == DISP_PARAM)
 	{
-		osDelay(TASK_DELAY_IHM);
-
-		cpt_refresh++;
-		if(cpt_refresh>=REFRESH_DISPLAY)
+		if(Bp_Up == BP_CLICK)
 		{
-			Update_Display();
-			cpt_refresh=0;
+			if(Display_Cursor == 3)
+				Display_Cursor = 0;
+			else
+				Display_Cursor++;
 		}
+		if(Bp_Down == BP_CLICK)
+		{
+			if(Display_Cursor == 0)
+				Display_Cursor = 3;
+			else
+				Display_Cursor--;
+		}
+		if(Bp_Ok == BP_CLICK)
+		{
+			switch(Display_Cursor)
+			{
+			case 0:
+				Current_Display = DISP_CONFIG_MODE;
+				break;
+			case 1:
+				Current_Display = DISP_CONFIG_INVERT;
+				break;
+			case 2:
+				Current_Display = DISP_CONFIG_ADDRESS;
+				break;
+			case 3:
+				Current_Display = DISP_CONFIG_MANVALUE;
+				break;
+			default:
+				break;
+			}
+		}
+	}
 
-		Manage_Button();
+	else if(Current_Display == DISP_CONFIG_MODE)
+	{
+		if(Bp_Up == BP_CLICK)
+		{
+			param_changed=__TRUE;
+			tick_save_param = HAL_GetTick();
+			if(Current_Mode == 2)
+				Current_Mode = 0;
+			else
+				Current_Mode++;
+		}
+		if(Bp_Down == BP_CLICK)
+		{
+			param_changed=__TRUE;
+			tick_save_param = HAL_GetTick();
+			if(Current_Mode == 0)
+				Current_Mode = 2;
+			else
+				Current_Mode--;
+		}
 
 		if(Bp_Ok == BP_CLICK)
 		{
-			if(Current_Mode==MODE_OFF)
-				Current_Mode=MODE_MANU;
-			else if(Current_Mode==MODE_MANU)
-				Current_Mode=MODE_DMX;
-			else
-				Current_Mode=MODE_OFF;
+			Current_Display = DISP_PARAM;
+		}
+	}
 
+	else if(Current_Display == DISP_CONFIG_ADDRESS)
+	{
+		if(Bp_Up == BP_CLICK)
+		{
+			if(DMX_Adress<512)
+				DMX_Adress++;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
+			Protocol_DMX_init(DMX_Adress,DMX_uart);
+		}
+		if(Bp_Up == BP_1s)
+		{
+			if(DMX_Adress<=502)
+				DMX_Adress+=10;
+			else
+				DMX_Adress=512;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
+			Protocol_DMX_init(DMX_Adress,DMX_uart);
+		}
+		if(Bp_Down == BP_CLICK)
+		{
+			if(DMX_Adress>1)
+				DMX_Adress--;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
+			Protocol_DMX_init(DMX_Adress,DMX_uart);
+		}
+		if(Bp_Down == BP_1s)
+		{
+			if(DMX_Adress>=11)
+				DMX_Adress-=10;
+			else
+				DMX_Adress=1;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
+			Protocol_DMX_init(DMX_Adress,DMX_uart);
+		}
+		if(Bp_Ok == BP_CLICK)
+		{
+			Current_Display = DISP_PARAM;
+		}
+	}
+
+	else if(Current_Display==DISP_CONFIG_MANVALUE)
+	{
+		if(Bp_Up == BP_CLICK)
+		{
+			if(Manu_value<100)
+				Manu_value++;
 			param_changed = __TRUE;
 			tick_save_param = HAL_GetTick();
 		}
-
-		if(Current_Mode==MODE_MANU)
+		if(Bp_Up == BP_1s)
 		{
-			if(Bp_Up == BP_CLICK)
-			{
-				if(Manu_value<100)
-					Manu_value++;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-			}
-			if(Bp_Up == BP_1s)
-			{
-				if(Manu_value<=90)
-					Manu_value+=10;
-				else
-					Manu_value=100;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-			}
-			if(Bp_Down == BP_CLICK)
-			{
-				if(Manu_value>0)
-					Manu_value--;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-			}
-			if(Bp_Down == BP_1s)
-			{
-				if(Manu_value>=10)
-					Manu_value-=10;
-				else
-					Manu_value=0;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-			}
+			if(Manu_value<=90)
+				Manu_value+=10;
+			else
+				Manu_value=100;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
 		}
-
-		if(Current_Mode==MODE_DMX)
+		if(Bp_Down == BP_CLICK)
 		{
-			if(Bp_Up == BP_CLICK)
-			{
-				if(DMX_Adress<512)
-					DMX_Adress++;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-				Protocol_DMX_init(DMX_Adress,Ref_dmxuart);
-			}
-			if(Bp_Up == BP_1s)
-			{
-				if(DMX_Adress<=502)
-					DMX_Adress+=10;
-				else
-					DMX_Adress=512;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-				Protocol_DMX_init(DMX_Adress,Ref_dmxuart);
-			}
-			if(Bp_Down == BP_CLICK)
-			{
-				if(DMX_Adress>1)
-					DMX_Adress--;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-				Protocol_DMX_init(DMX_Adress,Ref_dmxuart);
-			}
-			if(Bp_Down == BP_1s)
-			{
-				if(DMX_Adress>=11)
-					DMX_Adress-=10;
-				else
-					DMX_Adress=1;
-				param_changed = __TRUE;
-				tick_save_param = HAL_GetTick();
-				Protocol_DMX_init(DMX_Adress,Ref_dmxuart);
-			}
+			if(Manu_value>0)
+				Manu_value--;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
 		}
-
-		if(HAL_GetTick()>tick_save_param+DELAY_SAVE_PARAM && param_changed==__TRUE)
+		if(Bp_Down == BP_1s)
 		{
-			param_changed = __FALSE;
-			Write_Param();
+			if(Manu_value>=10)
+				Manu_value-=10;
+			else
+				Manu_value=0;
+			param_changed = __TRUE;
+			tick_save_param = HAL_GetTick();
+		}
+		if(Bp_Ok == BP_CLICK)
+		{
+			Current_Display = DISP_PARAM;
+		}
+	}
+
+	else if(Current_Display==DISP_CONFIG_INVERT)
+	{
+		if(Bp_Up == BP_CLICK || Bp_Down == BP_CLICK)
+		{
+			param_changed=__TRUE;
+			tick_save_param = HAL_GetTick();
+			if(IsInverted)
+				IsInverted = __FALSE;
+			else
+				IsInverted = __TRUE;
+		}
+		if(Bp_Ok == BP_CLICK)
+		{
+			Current_Display = DISP_PARAM;
 		}
 	}
 }
 
-/* Public function -----------------------------------------------*/
-void App_Init(UART_HandleTypeDef* ref_uart,TIM_HandleTypeDef* LED_pwmtimer, uint32_t LED_PWMchannel, I2C_HandleTypeDef* hi2c_display)
+void UpdateServo()
 {
-	Ref_dmxuart = ref_uart;
-	LED_PWMtimer = LED_pwmtimer;
-	LED_PWMchannel = LED_PWMchannel;
-	I2C_display = hi2c_display;
+	PWM_SetDuty(SERVO_pwmtimer, SERVO1_Channel, OFFSET_SERVO+Protocol_DMX_GetValue(9));
+	PWM_SetDuty(SERVO_pwmtimer, SERVO2_Channel, OFFSET_SERVO+Protocol_DMX_GetValue(10));
+}
 
+/* Public function -----------------------------------------------*/
+void App_Init()
+{
 	Load_Param();
+	Display_Cursor = 0;
+
+	PatchPWMtoLED(IsInverted);
+
+	switch(Current_Mode)
+	{
+		case MODE_OFF:
+			Current_Display = DISP_CONFIG_MODE;
+			break;
+		case MODE_MANU:
+			Current_Display = DISP_CONFIG_MANVALUE;
+			break;
+		default:
+			Current_Display = DISP_CONFIG_ADDRESS;
+			break;
+	}
+
 
 	DMX_signal_OK = __FALSE;
-	Protocol_DMX_init(DMX_Adress,Ref_dmxuart);
-	PWM_SetPWM(LED_PWMtimer,LED_PWMchannel,LED_PWM_PERIOD_VALUE,128);		//PWM Off
-	SSD1306_Init(I2C_display);  // initialise
+
+	HAL_TIM_PWM_Start( LED1_pwmtimer, LED1_PWMchannel );
+	HAL_TIM_PWM_Start( LED2_pwmtimer, LED2_PWMchannel );
+	HAL_TIM_PWM_Start( LED3_pwmtimer, LED3_PWMchannel );
+	HAL_TIM_PWM_Start( LED4_pwmtimer, LED4_PWMchannel );
+
+
+	PWM_SetDuty(LED1_pwmtimer,LED1_PWMchannel,0);		//PWM Off
+	PWM_SetDuty(LED2_pwmtimer,LED2_PWMchannel,0);		//PWM Off
+	PWM_SetDuty(LED3_pwmtimer,LED3_PWMchannel,0);		//PWM Off
+	PWM_SetDuty(LED4_pwmtimer,LED4_PWMchannel,0);		//PWM Off
+
+	//Servo
+	SERVO_pwmtimer = &htim4;
+	SERVO1_Channel = TIM_CHANNEL_1;
+	SERVO2_Channel = TIM_CHANNEL_2;
+	HAL_TIM_PWM_Start(SERVO_pwmtimer,SERVO1_Channel);
+	HAL_TIM_PWM_Start(SERVO_pwmtimer,SERVO2_Channel);
+	PWM_SetDuty(SERVO_pwmtimer,SERVO1_Channel,OFFSET_SERVO);
+	PWM_SetDuty(SERVO_pwmtimer,SERVO2_Channel,OFFSET_SERVO);
+
+	GENE_I2C_Init(GPIOB, SDA_IO_Pin, GPIOB, SCL_IO_Pin);
+	Protocol_DMX_init(DMX_Adress,DMX_uart);
+	//SSD1306_Init(hi2c_display);  // initialise
+	SSD1306_Init();  // initialise
 
 	Bp_Up = BP_OFF;
 	Bp_Down = BP_OFF;
 	Bp_Ok = BP_OFF;
+
+	HAL_TIM_Base_Start_IT(Tick_Timer);
 }
 
-void CreatAppTasks (void)
+void ManageFan()
 {
-	osThreadDef(App_LED_Task, AppLEDTask, osPriorityHigh, 0, 128);
-	AppLEDTaskHandle = osThreadCreate(osThread(App_LED_Task), NULL);
+	static uint32_t timeRefreshFan=0;
+	static uint32_t timePWMFan=0;
+	static uint8_t FAN_Duty;
+	static uint32_t FAN_Mean;
+	static uint8_t Cpt_Mean;
 
-	osThreadDef(App_IHM_Task, AppIHMTask, osPriorityNormal, 0, 256);
-	AppIHMTaskHandle = osThreadCreate(osThread(App_IHM_Task), NULL);
+	//update FAN
+	if(HAL_GetTick() > timeRefreshFan+REFRESH_FAN)
+	{
+		if(Cpt_Mean>0)
+		{
+			FAN_Mean += Mean_Value;
+			Cpt_Mean--;
+		}
+		else
+		{
+			Cpt_Mean=100;
+			FAN_Duty = FAN_Mean/100;
+			FAN_Mean=0;
+		}
+		timeRefreshFan = HAL_GetTick();
+	}
+
+	if(FAN_Duty==0)											//power  0%
+		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+	else if(FAN_Duty>128)									//power > 50%
+		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
+	else if(FAN_Duty>0 && HAL_GetTick()>timePWMFan+200)	//power > 0%
+	{
+		HAL_GPIO_TogglePin(FAN_GPIO_Port, FAN_Pin);
+		timePWMFan = HAL_GetTick();
+	}
 }
 
+void App()
+{
+	static uint32_t timeRefreshDisplay=0;
 
+
+	//Update Display
+	if(HAL_GetTick() > timeRefreshDisplay+REFRESH_DISPLAY)
+	{
+		timeRefreshDisplay = HAL_GetTick();
+		Update_Display();
+		HAL_GPIO_TogglePin(GPIOC, LED_V_Pin);
+	}
+
+	//Save Param if change
+	if(HAL_GetTick()>(tick_save_param+DELAY_SAVE_PARAM) && param_changed==__TRUE)
+	{
+		param_changed = __FALSE;
+		Write_Param();
+		PatchPWMtoLED(IsInverted);
+	}
+
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+		AppLEDTask();
+		AppIHMTask();
+		ManageFan();
+		UpdateServo();
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	Protocol_DMX_UartCallback(huart);
+}

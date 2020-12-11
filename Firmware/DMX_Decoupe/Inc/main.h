@@ -50,8 +50,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -78,18 +76,14 @@ void Error_Handler(void);
 #define CURRENT3_GPIO_Port GPIOA
 #define CURRENT4_Pin GPIO_PIN_5
 #define CURRENT4_GPIO_Port GPIOA
-#define I1_Pin GPIO_PIN_6
-#define I1_GPIO_Port GPIOA
-#define I2_Pin GPIO_PIN_7
-#define I2_GPIO_Port GPIOA
+#define IN1_Pin GPIO_PIN_6
+#define IN1_GPIO_Port GPIOA
+#define IN2_Pin GPIO_PIN_7
+#define IN2_GPIO_Port GPIOA
 #define T1_Pin GPIO_PIN_0
 #define T1_GPIO_Port GPIOB
 #define VOLTAGE_Pin GPIO_PIN_1
 #define VOLTAGE_GPIO_Port GPIOB
-#define PWM3_Pin GPIO_PIN_10
-#define PWM3_GPIO_Port GPIOB
-#define PWM4_Pin GPIO_PIN_11
-#define PWM4_GPIO_Port GPIOB
 #define T2_Pin GPIO_PIN_12
 #define T2_GPIO_Port GPIOB
 #define T3_Pin GPIO_PIN_13
@@ -102,16 +96,16 @@ void Error_Handler(void);
 #define USART_TX_DUBUG_GPIO_Port GPIOA
 #define USART_RX_DUBUG_Pin GPIO_PIN_10
 #define USART_RX_DUBUG_GPIO_Port GPIOA
-#define PWM1_Pin GPIO_PIN_15
-#define PWM1_GPIO_Port GPIOA
-#define PWM2_Pin GPIO_PIN_3
-#define PWM2_GPIO_Port GPIOB
 #define FAN_Pin GPIO_PIN_4
 #define FAN_GPIO_Port GPIOB
 #define S1_Pin GPIO_PIN_6
 #define S1_GPIO_Port GPIOB
 #define S2_Pin GPIO_PIN_7
 #define S2_GPIO_Port GPIOB
+#define SCL_IO_Pin GPIO_PIN_8
+#define SCL_IO_GPIO_Port GPIOB
+#define SDA_IO_Pin GPIO_PIN_9
+#define SDA_IO_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
