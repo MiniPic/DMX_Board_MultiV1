@@ -173,7 +173,7 @@ void Manage_Button()
 	static uint32_t time_BpDown=0;
 	static uint32_t time_BpOk=0;
 
-	if(!HAL_GPIO_ReadPin(BP_UP_GPIO_Port, BP_UP_Pin))
+	if(!HAL_GPIO_ReadPin(T1_GPIO_Port, T1_Pin))
 	{
 		if(Bp_Up==BP_OFF)
 		{
@@ -191,7 +191,7 @@ void Manage_Button()
 	else
 		Bp_Up=BP_OFF;
 
-	if(!HAL_GPIO_ReadPin(BP_DOWN_GPIO_Port, BP_DOWN_Pin))
+	if(!HAL_GPIO_ReadPin(T3_GPIO_Port, T3_Pin))
 	{
 		if(Bp_Down==BP_OFF)
 		{
@@ -209,7 +209,7 @@ void Manage_Button()
 	else
 		Bp_Down=BP_OFF;
 
-	if(!HAL_GPIO_ReadPin(BP_OK_GPIO_Port, BP_OK_Pin))
+	if(!HAL_GPIO_ReadPin(T2_GPIO_Port, T2_Pin))
 	{
 		if(Bp_Ok==BP_OFF)
 		{
